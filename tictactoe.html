@@ -5,6 +5,7 @@
 let player="X";
 let data=[];
 let dat="";
+const music = new Audio('victorymale-version-230553.mp3');
 let change = cell_n => {
     if ((document.getElementById(`cell${cell_n}`).innerHTML=="") && playing) {
         document.getElementById(`cell${cell_n}`).innerHTML=player;
@@ -41,10 +42,12 @@ let check_2 =()=> {
             case "XXX":
             document.getElementById("reset").innerHTML = player+" won";
             playing=false;
+            playMusic();
             break;
             case "OOO":
             document.getElementById("reset").innerHTML = player+" won";
             playing=false;
+            playMusic();
             break;
     };
     dat="";
@@ -61,7 +64,7 @@ let turn =()=> {
             break;
     };
 };
-let reset = () => {
+let reset =()=> {
     playing=true;
     player="X";
     i=0;
@@ -78,6 +81,12 @@ let reset = () => {
     document.getElementById("board").innerHTML = table_text;
     document.getElementById("reset").innerHTML = "Reset";
 };
+
+let playMusic =()=> {
+  
+  music.play();
+}
+
     </script>
 <style>
 
@@ -142,6 +151,7 @@ border: 1px solid #FFFFFF;}
 </style>
 </head>
 <body>
+
 <table id="board"></table>
 <button type="button" id="reset" onclick="reset();" class="reset">Reset</button>
 
