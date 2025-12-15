@@ -5,7 +5,9 @@
 // ends when all balls leave the board (left or right).
 //   g++ -std=c++17 cpp/table_tennis.cpp -o tt && ./tt
 
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
+#include <cmath>
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -54,7 +56,24 @@ int main() {
     auto show_cursor = [](){ cout << "\033[?25h"; };
 
     hide_cursor();
-
+    struct Board
+    {
+        char grid[H][W];
+        Board() {
+            for (int i = 0; i < H; ++i)
+                for (int j = 0; j < W; ++j)
+                    grid[i][j] = ' ';
+        };
+        void print() {
+            for (int i = 0; i < H; ++i) {
+                for (int j = 0; j < W; ++j) {
+                cout << grid[i][j];
+            };
+            cout << "\n";
+            };
+        };
+    };
+    Board board;
     while (running) {
         vector<Ball> balls;
         // spawn `round` balls in middle with random small velocities
@@ -80,13 +99,12 @@ int main() {
                 if (ch == 'w' || ch == 'W') paddleY = max(1, paddleY - 1);
                 if (ch == 's' || ch == 'S') paddleY = min(H - paddleHeight - 1, paddleY + 1);
             }
-
+            
             // update balls
             for (auto &b : balls) {
                 if (!b.alive) continue;
                 b.x += b.vx;
                 b.y += b.vy;
-                b.vy += 0.05; // gravity
 
                 // reflect top/bottom
                 if (b.y < 1) { b.y = 1; b.vy = -b.vy; }
@@ -108,40 +126,45 @@ int main() {
                     b.alive = false;
                 }
             }
-
             // check alive balls
             bool anyAlive = false;
             for (auto &b : balls) if (b.alive) { anyAlive = true; break; }
             if (!anyAlive) break;
-
+            
             // render
             clear_screen();
+            for (int i = 0; i < H; ++i)
+                for (int j = 0; j < W; ++j)
+                    board.grid[i][j] = ' ';
             // top border
-            for (int i = 0; i < W; ++i) cout << '-'; cout << '\n';
+            for (int i = 0; i < W; ++i) board.grid[0][i]='-';
+            board.grid[0][W]='\n';
             for (int y = 1; y < H-1; ++y) {
-                cout << '|';
+                board.grid[y][0]='|';
                 for (int x = 1; x < W-1; ++x) {
                     bool drawn = false;
-                    // balls
-                    for (auto &b : balls) {
-                        if (!b.alive) continue;
-                        int bx = (int)round(b.x);
-                        int by = (int)round(b.y);
-                        if (bx == x && by == y) { cout << 'o'; drawn = true; break; }
-                    }
-                    if (drawn) continue;
-
-                    // paddle
-                    if (x == paddleX) {
-                        if (y >= paddleY && y < paddleY + paddleHeight) { cout << '|'; continue; }
-                    }
-
                     cout << ' ';
                 }
-                cout << '|' << '\n';
+                board.grid[y][W-1]='|';
+                board.grid[y][W]='\n';
             }
             // bottom border
-            for (int i = 0; i < W; ++i) cout << '-'; cout << '\n';
+            for (int i = 0; i < W; ++i) board.grid[H][i]='-';
+            board.grid[H][W]='\n';
+            for (auto &b : balls) {
+                if (!b.alive) continue;
+                int bx = (int)round(b.x);
+                int by = (int)round(b.y);
+                if (bx > 0 && bx < W-1 && by > 0 && by < H-1) {
+                    board.grid[by][bx]='O';
+                }
+            }
+            // draw paddle
+            for (int py = 0; py < paddleHeight; ++py) {
+                board.grid[paddleY + py][paddleX] = '|';
+            }
+            board.print();
+            
 
             cout << "Round: " << roundNum << "  Balls alive: ";
             int aliveCount = 0; for (auto &b: balls) if (b.alive) ++aliveCount;
