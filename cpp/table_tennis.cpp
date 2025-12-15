@@ -1,8 +1,9 @@
-// Written by Claude Haiku 4.5
+// Written by Claude Haiku 4.5 and Theevilsnips
 // Simple terminal table-tennis game.
 // Controls: 'w' = up, 's' = down, 'q' = quit
 // Each round starts with N balls (N increases each round). The round
 // ends when all balls leave the board (left or right).
+//   g++ -std=c++17 cpp/table_tennis.cpp -o tt && ./tt
 
 #include <bits/stdc++.h>
 #include <termios.h>
@@ -13,7 +14,12 @@ using namespace std;
 
 struct TermiosGuard {
     struct termios oldt;
-    TermiosGuard() { tcgetattr(STDIN_FILENO, &oldt); struct termios newt = oldt; newt.c_lflag &= ~(ICANON | ECHO); tcsetattr(STDIN_FILENO, TCSANOW, &newt); }
+    TermiosGuard() {
+        tcgetattr(STDIN_FILENO, &oldt); 
+        struct termios newt = oldt; 
+        newt.c_lflag &= ~(ICANON | ECHO); 
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt); 
+    }
     ~TermiosGuard() { tcsetattr(STDIN_FILENO, TCSANOW, &oldt); }
 };
 
