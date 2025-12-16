@@ -3,7 +3,7 @@
 // Controls: 'w' = up, 's' = down, 'q' = quit
 // Each round starts with N balls (N increases each round). The round
 // ends when all balls leave the board (left or right).
-//   g++ -std=c++17 cpp/table_tennis.cpp -o tt && ./tt
+//   g++ -std=c++17 cpp/demo.cpp -o cpp/demo && ./cpp/demo
 
 #include <iostream>
 #include <vector>
@@ -31,7 +31,7 @@ struct Ball {
     bool alive = true;
 };
 
-int main() {
+int main(int argc, char *argv[]) {
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
 
@@ -47,8 +47,11 @@ int main() {
     // set non-blocking stdin
     int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
-
+    
     int roundNum = 1;
+    if (argc >= 2) {
+        roundNum = atoi(argv[1]);
+    }
     bool running = true;
 
     auto clear_screen = [](){ cout << "\033[2J\033[H"; };
@@ -65,6 +68,7 @@ int main() {
                     grid[i][j] = ' ';
         };
         void print() {
+            cout << "\n";
             for (int i = 0; i < H; ++i) {
                 for (int j = 0; j < W; ++j) {
                 cout << grid[i][j];
@@ -149,8 +153,7 @@ int main() {
                 board.grid[y][W]='\n';
             }
             // bottom border
-            for (int i = 0; i < W; ++i) board.grid[H][i]='-';
-            board.grid[H][W]='\n';
+            for (int i = 0; i < W; ++i) board.grid[H-1][i]='-';
             for (auto &b : balls) {
                 if (!b.alive) continue;
                 int bx = (int)round(b.x);
