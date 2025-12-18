@@ -75,28 +75,29 @@ int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, i
     case 0: // Pawn
         if (target_y == piece.y + (2*piece.isWhite)-1 && target_x == piece.x &&
             board.grid[target_x][target_y] == nullptr) {
-            board.grid[piece.x][piece.y] = nullptr;
-            board.grid[target_x][target_y] = &piece;
-            piece.x = target_x;
-            piece.y = target_y;
+            piece.enPassantable = false;
+            move(); // Single-square move
         } else if (target_y == piece.y + (2*piece.isWhite)-1 && 
                    (target_x == piece.x + 1 || target_x == piece.x - 1) &&
                    board.grid[target_x][target_y] != nullptr &&
                    board.grid[target_x][target_y]->isWhite != piece.isWhite) {
-            move();
+        piece.enPassantable = false; 
+        move();
         } else if ((piece.isWhite && piece.y == 1 && target_y == 3 && target_x == piece.x) ||
                    (!piece.isWhite && piece.y == 6 && target_y == 4 && target_x == piece.x) &&
                     board.grid[target_x][target_y+2*piece.isWhite-1] == nullptr) {
             piece.enPassantable = true;
             move(); // Two-square initial move
         } else if ((target_y == piece.y + (2*piece.isWhite)-1) &&
-                   (target_x == piece.x + 1 || target_x == piece.x - 1) &&
-                   board.grid[target_x][target_y] == nullptr &&
-                   board.grid[target_x][target_y-((2*piece.isWhite)-1)] != nullptr &&
-                   board.grid[target_x][target_y-((2*piece.isWhite)-1)]->ptype == 0 &&
-                   board.grid[target_x][target_y-((2*piece.isWhite)-1)]->isWhite != piece.isWhite &&
-                   board.grid[target_x][target_y-((2*piece.isWhite)-1)]->enPassantable) {
+                    (target_x == piece.x + 1 || target_x == piece.x - 1) &&
+                    board.grid[target_x][target_y] == nullptr &&
+                    board.grid[target_x][target_y-((2*piece.isWhite)-1)] != nullptr &&
+                    board.grid[target_x][target_y-((2*piece.isWhite)-1)]->ptype == 0 &&
+                    board.grid[target_x][target_y-((2*piece.isWhite)-1)]->isWhite != piece.isWhite &&
+                    board.grid[target_x][target_y-((2*piece.isWhite)-1)]->enPassantable &&
+                    board_history[board_history.size()-2].grid[target_x][target_y-((2*piece.isWhite)-1)] == nullptr) {
             board.grid[target_x][target_y-((2*piece.isWhite)-1)] = nullptr; // Capture the pawn
+            piece.enPassantable = false;
             move(); // En passant
         } else {
             return -1; // Invalid move
