@@ -1,6 +1,7 @@
 // chess.cpp 
 // g++ -std=c++17 cpp/chess.cpp -o cpp/chess && ./cpp/chess
 // шахматы
+// todo: turns, check/checkmate, stalemate, draw conditions, AI opponent
 #include <iostream>
 #include <vector>
 
