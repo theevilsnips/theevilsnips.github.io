@@ -146,15 +146,13 @@ int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, i
                    (target_x == piece.x + 2 || target_x == piece.x - 2)) {
             // Castling
             int rook_x = (target_x == piece.x + 2) ? 7 : 0;
+            int step = (target_x == piece.x + 2) ? 1 : -1;
             if (board.grid[rook_x][piece.y] != nullptr &&
                 board.grid[rook_x][piece.y]->ptype == 1 &&
                 !board.grid[rook_x][piece.y]->hasMoved) {
                 // Check path clear
-                int step = (target_x - piece.x) / abs(target_x - piece.x);
-                for (int x = piece.x + step; x != rook_x; x += step) {
-                    if (board.grid[x][piece.y] != nullptr) {
-                        return -1; // Path is blocked
-                    }
+                if (!check_path_clear()) {
+                    return -1; // Path is blocked
                 }
                 // Move king
                 move();
