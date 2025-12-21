@@ -87,7 +87,7 @@ int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, i
         
 
         // Check if king is in check after move
-        if (is_threatened(king_x, king_y, temp_board, rying to fuiturn, board_history)) {
+        if (is_threatened(king_x, king_y, temp_board, turn, board_history)) {
             return -1; // Move leaves king in check, invalid
         }
 
