@@ -25,7 +25,7 @@ struct Board {
         }
     }
 };
-int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, int target_x, int target_y);
+int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, int target_x, int target_y, bool turn);
 
 void printBoard(const Board& board) {
     char type_to_char[] = {'P', 'R', 'N', 'B', 'Q', 'K'};
@@ -40,25 +40,26 @@ void printBoard(const Board& board) {
         std::cout << '\n';
     }
 };
-int is_threatened(int x, int y, const Board &board, bool turn, std::vector<Board> &board_history) {
+bool is_threatened(int x, int y, const Board &board, bool turn, std::vector<Board> &board_history) {
     //check for threats from all piece types
     for (int i = 0; i < 8; ++i) {
         for (int j = 0; j < 8; ++j) {
             Piece* piece = board.grid[i][j];
-            
             if (piece != nullptr) {
+                // Use a fresh copy of the board for each candidate move so previous simulations don't interfere
                 Board temp_board = board;
-                if (move_piece(*piece, temp_board, board_history, x, y) == 0) {
-                    //std::cout << "Square (" << x << ", " << y << ") is threatened by piece at (" << i << ", " << j << ")\n";
-                    return 1; // Square is threatened
+                if (temp_board.grid[i][j] == nullptr) continue;
+                if (move_piece(*temp_board.grid[i][j], temp_board, board_history, x, y, turn) == 0) {
+                    std::cout << "Square (" << (char)(x+'a') << ", " << y+1 << ") is threatened by piece at (" << (char)(i+'a') << ", " << j+1 << ")\n";
+                    return true; // Square is threatened
                 }
             }
         }
     }
-    return 0; // Square is safe
+    return false; // Square is safe
 }
-int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, int target_x, int target_y) {
-    auto move=[&board, &piece, target_x, target_y, &board_history]() {
+int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, int target_x, int target_y, bool turn) {
+    auto move=[&board, &piece, target_x, target_y, &board_history, turn]() {
         //handle check and pins
         Board temp_board = board;
         // Verify the move doesn't leave the king in check
@@ -70,26 +71,23 @@ int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, i
         temp_board.grid[target_x][target_y] = &piece;
 
         // Find the king position after the move
-        int king_x = piece.x, king_y = piece.y;
-        if (piece.ptype == 5) { // If moving piece is the king
-            king_x = target_x;
-            king_y = target_y;
-        } else {
+        int king_x, king_y;
+        
             // Find friendly king
-            for (int i = 0; i < 8; ++i) {
+        for (int i = 0; i < 8; ++i) {
                 for (int j = 0; j < 8; ++j) {
                     if (temp_board.grid[i][j] != nullptr &&
                         temp_board.grid[i][j]->ptype == 5 &&
-                        temp_board.grid[i][j]->isWhite == piece.isWhite) {
+                        temp_board.grid[i][j]->isWhite == turn) {
                         king_x = i;
                         king_y = j;
                     }
                 }
-            }
         }
+        
 
         // Check if king is in check after move
-        if (is_threatened(king_x, king_y, temp_board, !piece.isWhite, board_history)) {
+        if (is_threatened(king_x, king_y, temp_board, rying to fuiturn, board_history)) {
             return -1; // Move leaves king in check, invalid
         }
 
@@ -103,6 +101,7 @@ int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, i
         board.grid[target_x][target_y] = &piece;
         piece.x = target_x;
         piece.y = target_y;
+        source = nullptr;
         piece.hasMoved = true;
         return 0;
     };
@@ -120,8 +119,9 @@ int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, i
         }
         return true; // Path is clear
     };
-    
-    
+    if (&piece == nullptr) {
+        return -1; // No piece at source position
+    };
     if (target_x == piece.x && target_y == piece.y) {
         return -1; // No movement
     };
@@ -134,37 +134,38 @@ int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, i
     };
     switch (piece.ptype)
     {
-    case 0: // Pawn
-        if (target_y == piece.y + (2*piece.isWhite)-1 && target_x == piece.x &&
-            board.grid[target_x][target_y] == nullptr) {
+    case 0: { // Pawn
+        int dy = piece.isWhite ? 1 : -1;
+        // Single-square forward
+        if (target_x == piece.x && target_y == piece.y + dy && board.grid[target_x][target_y] == nullptr) {
             piece.enPassantable = false;
-            move(); // Single-square move
-        } else if (target_y == piece.y + (2*piece.isWhite)-1 && 
-                   (target_x == piece.x + 1 || target_x == piece.x - 1) &&
-                   board.grid[target_x][target_y] != nullptr &&
-                   board.grid[target_x][target_y]->isWhite != piece.isWhite) {
-        piece.enPassantable = false; 
-        move();
-        } else if ((piece.isWhite && piece.y == 1 && target_y == 3 && target_x == piece.x) ||
-                   (!piece.isWhite && piece.y == 6 && target_y == 4 && target_x == piece.x) &&
-                    board.grid[target_x][target_y+2*(piece.isWhite-1)] == nullptr) {
+            return move();
+        }
+        // Capture
+        if ((target_x == piece.x + 1 || target_x == piece.x - 1) && target_y == piece.y + dy &&
+            board.grid[target_x][target_y] != nullptr && board.grid[target_x][target_y]->isWhite != piece.isWhite) {
+            piece.enPassantable = false;
+            return move();
+        }
+        // Two-square initial move
+        int start_rank = piece.isWhite ? 1 : 6;
+        if (piece.y == start_rank && target_x == piece.x && target_y == piece.y + 2*dy &&
+            board.grid[target_x][piece.y + dy] == nullptr && board.grid[target_x][target_y] == nullptr) {
             piece.enPassantable = true;
-            move(); // Two-square initial move
-        } else if ((target_y == piece.y + (2*piece.isWhite)-1) &&
-                    (target_x == piece.x + 1 || target_x == piece.x - 1) &&
-                    board.grid[target_x][target_y] == nullptr &&
-                    board.grid[target_x][target_y-((2*piece.isWhite)-1)] != nullptr &&
-                    board.grid[target_x][target_y-((2*piece.isWhite)-1)]->ptype == 0 &&
-                    board.grid[target_x][target_y-((2*piece.isWhite)-1)]->isWhite != piece.isWhite &&
-                    board.grid[target_x][target_y-((2*piece.isWhite)-1)]->enPassantable &&
-                    board_history[board_history.size()-2].grid[target_x][target_y-((2*piece.isWhite)-1)] == nullptr) {
-            board.grid[target_x][target_y-((2*piece.isWhite)-1)] = nullptr; // Capture the pawn
-            piece.enPassantable = false;
-            move(); // En passant
-        } else {
-            return -1; // Invalid move
-        };
-        return 0;
+            return move();
+        }
+        // En passant capture
+        if ((target_x == piece.x + 1 || target_x == piece.x - 1) && target_y == piece.y + dy &&
+            board.grid[target_x][target_y] == nullptr) {
+            Piece* epPawn = board.grid[target_x][piece.y]; // pawn to be captured
+            if (epPawn != nullptr && epPawn->ptype == 0 && epPawn->isWhite != piece.isWhite && epPawn->enPassantable) {
+                board.grid[target_x][piece.y] = nullptr; // capture the pawn
+                piece.enPassantable = false;
+                return move();
+            }
+        }
+        return -1;
+    }
     case 1: // Rook
         if (target_x != piece.x && target_y != piece.y) {
             return -1; // Rook moves only in straight lines
@@ -172,15 +173,14 @@ int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, i
         if (!check_path_clear()) {
             return -1; // Path is blocked
         };
-        move();
+        return move();
         return 0;
     case 2: // Knight
         if (!((abs(target_x - piece.x) == 2 && abs(target_y - piece.y) == 1) ||
               (abs(target_x - piece.x) == 1 && abs(target_y - piece.y) == 2))) {
             return -1; // Invalid knight move
         }
-        move();
-        return 0;
+        return move();
     case 3: // Bishop
         if (abs(target_x - piece.x) != abs(target_y - piece.y)) {
             return -1; // Bishop moves only diagonally
@@ -188,7 +188,7 @@ int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, i
         if (!check_path_clear()) {
             return -1; // Path is blocked
         };
-        move();
+        return move();
         return 0;
     case 4: // Queen
         if (target_x != piece.x && target_y != piece.y &&
@@ -198,11 +198,11 @@ int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, i
         if (!check_path_clear()) {
             return -1; // Path is blocked
         };
-        move();
+        return move();
         return 0;
     case 5: // King
         if (!(abs(target_x - piece.x) > 1 || abs(target_y - piece.y) > 1)) {
-            move();
+            return move();
             return 0; // King moves only one square in any direction
         } else if (!piece.hasMoved && target_y == piece.y &&
                    (target_x == piece.x + 2 || target_x == piece.x - 2)) {
@@ -222,7 +222,9 @@ int move_piece (Piece &piece, Board &board, std::vector<Board> &board_history, i
                     }
                 }
                 // Move king
-                move();
+                if (move()==-1) {
+                    return -1; // Invalid move
+                }
                 // Move rook
                 Piece* rook = board.grid[rook_x][piece.y];
                 board.grid[rook_x][piece.y] = nullptr;
@@ -268,12 +270,12 @@ int input_move(Board &board, std::vector<Board> &board_history, bool turn) {
     } else if (board.grid[pos_x][pos_y]->isWhite != turn) {
         return -1; // Not the player's turn
     };
-    return move_piece(*board.grid[pos_x][pos_y], board, board_history, target_x, target_y);
+    return move_piece(*board.grid[pos_x][pos_y], board, board_history, target_x, target_y, turn);
 };
 
 int game_loop(Board &board, std::vector<Board> &board_history, int result=0, bool turn=true) {
     auto promote = [](Piece &piece, Board &board) {
-
+    
     char promotion_choices[] = {'Q', 'R', 'B', 'N'};
     char choice;
     std::cout << "Promote pawn at " << char('a' + piece.x) << (piece.y + 1) << " to (Q, R, B, N): ";
@@ -298,6 +300,23 @@ int game_loop(Board &board, std::vector<Board> &board_history, int result=0, boo
         }
     };
     };
+    int king_x, king_y;
+    auto locate_king = [&](bool turn) {
+        for (int i=0; i<8; ++i) {
+        for (int j=0; j<8; ++j) {
+            if (board.grid[i][j] != nullptr) {
+                if (board.grid[i][j]->ptype == 5 && (board.grid[i][j]->isWhite == turn)) {
+                    king_x = i;
+                    king_y = j;
+                    goto found_king;
+                }
+            }
+        }
+    }
+    found_king:
+    if (is_threatened(king_x, king_y, board, turn, board_history)) {
+        std::cout << (turn ? "White is in check.\n" : "Black is in check.\n");
+    }};
     result = input_move(board, board_history, turn);
     if (result == -1) {
         std::cout << "Invalid move, try again.\n";
@@ -315,32 +334,55 @@ int game_loop(Board &board, std::vector<Board> &board_history, int result=0, boo
     board_history.push_back(board);
     printBoard(board);
     //check for checkmate and stalemate
-    int king_x, king_y;
-    for (int i=0; i<8; i++) {
-        for (int j=0; j<8; ++j) {
-            if (board.grid[j][i] != nullptr) {
-                if (board.grid[j][i]->ptype == 5 && board.grid[j][i]->isWhite == turn) {
-                    int king_x = j;
-                    int king_y = i;
-                    goto found_king;
-                }
-            }
-        }
-    }
-    found_king:
+    
+    locate_king(!turn);
     bool legal_move_exists = false;
     for (int i = 0; i < 8; ++i) {
         for (int j = 0; j < 8; ++j) {
-            if (board.grid[i][j] != nullptr && board.grid[i][j]->isWhite != turn) {
-                if (move_piece(*board.grid[i][j], board, board_history, king_x, king_y) == 0) {
-                    legal_move_exists = true;
-                    return 0;
+            if (board.grid[i][j] == nullptr || board.grid[i][j]->isWhite != !turn) continue;
+            Board temp_board;
+            for (int k = 0; k < 8; ++k) {
+                for (int l = 0; l < 8; l++) {
+                    temp_board.grid[k][l] = (board.grid[k][l] != nullptr) ? new Piece(*board.grid[k][l]) : nullptr;
+                }
+            };
+            for (int k = 0; k < 8; ++k) {
+                for (int l = 0; l < 8; ++l) {
+                    
+                    int new_king_x, new_king_y;
+                    if (temp_board.grid[i][j] == nullptr) continue;
+                    if (move_piece(*temp_board.grid[i][j], temp_board, board_history, k, l, turn) != -1) {
+                        if (board.grid[i][j]->ptype == 5) {
+                        int new_king_x = -1, new_king_y = -1;
+                        for (int a = 0; a < 8; ++a) {
+                            for (int b = 0; b < 8; ++b) {
+                                if (temp_board.grid[a][b] != nullptr && temp_board.grid[a][b]->ptype == 5 && temp_board.grid[a][b]->isWhite == !turn) {
+                                    new_king_x = a;
+                                    new_king_y = b;
+                                    goto king_found;
+                                }
+                            }
+                        } } else { int new_king_x = king_x, new_king_y = king_y;};
+                        king_found:
+                    
+                        
+                        if (new_king_x != -1 && !is_threatened(new_king_x, new_king_y, temp_board, !turn, board_history)) {
+                            legal_move_exists = true;
+                            //the following 3 lines are debug code
+                            std::cout << "Legal move found.\n";
+                            std::cout << "From (" << (char)(i+'a') << ", " << j+1 << ") to (" << (char)(k+'a') << ", " << l+1 << ")\n";
+                            printBoard(temp_board);
+                            goto legal_move_found;
+                        }
+                    }
                 }
             }
         }
     }
+
+    legal_move_found:
     if (!legal_move_exists) {
-        if (is_threatened(king_x, king_y, board, turn, board_history)) {
+        if (is_threatened(king_x, king_y, board, !turn, board_history)) {
             std::cout << (turn ? "White is in checkmate.\n" : "Black is in checkmate.\n");
         } else {
             std::cout << "Stalemate.\n";
@@ -355,23 +397,25 @@ int game_loop(Board &board, std::vector<Board> &board_history, int result=0, boo
     //threefold repetition rule
     int repetition_count = 0;
     for (auto &history_board : board_history) {
+        bool is_repeated = true;
         for (int i = 0; i < 8; ++i) {
             for (int j = 0; j < 8; ++j) {
                 if ((board.grid[i][j] == nullptr && history_board.grid[i][j] != nullptr) ||
                     (board.grid[i][j] != nullptr && history_board.grid[i][j] == nullptr) ||
                     (board.grid[i][j] != nullptr && history_board.grid[i][j] != nullptr &&
                      board.grid[i][j]->ptype != history_board.grid[i][j]->ptype)) {
-                    goto not_repeated;
+                    is_repeated = false;
+                    
                 }
             }
         }
-        repetition_count++;
-        not_repeated:;
+        if (is_repeated) repetition_count++;
+        
     }
     if (repetition_count >= 3) {
         std::cout << "Draw by threefold repetition.\n";
     }
-
+    
     return game_loop(board, board_history, result, !turn);
 }
 int main() {
