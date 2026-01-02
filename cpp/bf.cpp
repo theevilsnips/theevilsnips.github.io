@@ -50,11 +50,12 @@ int main(int argc, char** argv) {
             case '[':
                 if (*ptr == 0) {
                     int bracket_count = 1;
-                    while (bracket_count > 0) {
+                    while (bracket_count > 0 && i < code.size()) {
                         ++i;
                         if (code[i] == '[') ++bracket_count;
                         else if (code[i] == ']') --bracket_count;
-                    }
+                    };
+                    
                 } else {
                     loop_stack.push_back(i);
                 }
