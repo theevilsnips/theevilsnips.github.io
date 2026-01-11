@@ -75,9 +75,9 @@ int main (int argc, char** argv) {
                     min_seperation = value;
                     break;
             }
-            i++; // Skip the next argument as it's already processed
+        
         }
     }
-    
+
     return 0;
 }
