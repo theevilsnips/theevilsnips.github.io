@@ -3,11 +3,11 @@
 #include <random>
 #include <unordered_map>
 
-int core_size;
-int max_cycles;
-int max_processes;
-int max_warrior_length;
-int min_seperation;
+int core_size=8000;
+int max_cycles=100000;
+int max_processes=1000000;
+int max_warrior_length=10000;
+int min_seperation=10;
 struct Core{
     char* memory;
     bool* colors;
@@ -46,6 +46,7 @@ int main (int argc, char** argv) {
     // obtain a seed from the system clock:
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::mt19937 generator (seed);  // mt19937 is a standard mersenne_twister_engine
+
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         std::unordered_map<std::string, int> arg_map = {
