@@ -23,9 +23,10 @@ OPCODES = {
     "LOG": 10,
     "COPY": 11,
     "JMP": 12,
+    "ALOC": 13
 }
 
-largest_index=60  # Ensure minimum output length
+largest_index=100  # Ensure minimum output length
 def parse_arg(token: str) -> float:
     """Parse a single argument token into an integer value.
 
@@ -89,7 +90,7 @@ def assemble_to_latex(assembly: str) -> str:
     words = assemble(assembly)
     inner = ",".join(str(x) for x in words)
     # Escape backslashes for literal LaTeX in a Python string output
-    return f"\\[A\\to\\left[{inner}\\right]\\]"
+    return f"A\\to\\left[{inner}\\right]"
 
 
 def _main(argv: List[str]):
