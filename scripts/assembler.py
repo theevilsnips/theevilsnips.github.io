@@ -23,7 +23,18 @@ OPCODES = {
     "LOG": 10,
     "COPY": 11,
     "JMP": 12,
-    "ALOC": 13
+    "ALOC": 13,
+    "ADDI": 14,
+    "SUBI": 15,
+    "MULTI": 16,
+    "DIVI": 17,
+    "MODI": 18,
+    "POWI": 19,
+    "LOGI": 20,
+    "IDIV" : 21,
+    "IMOD": 22,
+    "IPOW": 23,
+    "ILOG": 24
 }
 
 largest_index=100  # Ensure minimum output length
