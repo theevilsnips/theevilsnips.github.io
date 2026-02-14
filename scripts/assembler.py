@@ -34,7 +34,13 @@ OPCODES = {
     "IDIV" : 21,
     "IMOD": 22,
     "IPOW": 23,
-    "ILOG": 24
+    "ILOG": 24,
+    "ABS" : 25,
+    "SIN": 26,
+    "COS": 27,
+    "REAL": 28,
+    "IMAG": 29,
+    "FACT": 30
 }
 
 largest_index=100  # Ensure minimum output length
