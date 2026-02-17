@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Simple DATUM assembler: assembly string -> LaTeX array output
-This is an abstract machine assembler for a hypothetical machine called DATUM.
+This is an abstract machine assembler for a Desmos implementation of a computer called DATUM.
 It translates a simple assembly language into a flat list of complex floats,
 Usage:
   - as a module: call `assemble_to_latex(assembly_str)`
@@ -42,8 +42,7 @@ OPCODES = {
     "IMAG": 29,
     "FACT": 30
 }
-
-largest_index=100  # Ensure minimum output length
+largest_address = 0
 def parse_arg(token: str) -> float:
     """Parse a single argument token into an integer value.
 
@@ -52,6 +51,9 @@ def parse_arg(token: str) -> float:
     - "&12" address 12
     - "5"   numeric literal
     These are really just cosmetic, as the argument types are determined by the opcode.
+    However, the form "dX", where X is a number, repersents an address in the data segment,
+    which is appended to the end of the instruction segment in memory.
+    This allows for easier management of data storage.
     """
     t = token.strip()
     if not t:
@@ -61,11 +63,20 @@ def parse_arg(token: str) -> float:
             return float(t[1:])
         except ValueError:
             raise ValueError(f"Invalid numeric argument: {token}")
+    if t.startswith("d"):
+        try:
+                global largest_address
+                largest_address = max(largest_address, float(program_section_size) + float(t[1:]) + 4)  # +4 to account for the initial state of A in the instruction segment
+                return float(program_section_size) + float(t[1:]) + 4  
+        except ValueError:
+            raise ValueError(f"Invalid data segment argument: {token}")
     try:
         return float(t)
     except ValueError:
         raise ValueError(f"Unsupported argument format: {token}")
 
+program_section_size =int(0)  # This will be calculated based on the number of instructions in the assembly code
+"""Calculate the size of the instruction section based on the assembly code."""
 
 def assemble(assembly: str) -> List[float]:
     """Assemble a multi-line assembly string into a flat list of integers.
@@ -75,6 +86,8 @@ def assemble(assembly: str) -> List[float]:
     Blank lines and lines starting with '#' are ignored.
     """
     words: List[float] = [4,0,0]  # Initial state of A, with PC starting at 4
+    global program_section_size
+    program_section_size = (lambda assembly: sum(4 for raw_line in assembly.splitlines() if (line := raw_line.split("#", 1)[0].strip()) and [p for p in line.replace(',', ' ').split() if p]))(assembly)
     for raw_line in assembly.splitlines():
         line = raw_line.split("#", 1)[0].strip()
         if not line:
@@ -94,7 +107,7 @@ def assemble(assembly: str) -> List[float]:
             else:
                 nums.append(0)
         words.extend(nums)
-    while len(words) < largest_index:
+    while len(words) <1+largest_address:
         words.append(0)
     return words
 

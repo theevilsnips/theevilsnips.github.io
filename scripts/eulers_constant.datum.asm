@@ -1,8 +1,7 @@
-SET 2.71828182846 &49
-SET 1 &50
-ADD &51 &50 &51
-DIV &50 &51 &52
-ADD &52 &53 &53
-LOG &51 &49 &54 
-SUB &53 &54 &55
-JMP 12 0
+#This program computes Euler's Constant
+ADDI d1 1 d1
+IDIV 1 d1 d2
+LOGI d1 2.71828182846 d3
+ADD d4 d2 d4
+SUB d4 d3 d5
+JMP 4
