@@ -115,7 +115,7 @@ def assemble(assembly: str) -> List[float]:
 def assemble_to_latex(assembly: str) -> str:
     """Return LaTeX-formatted array string for the assembled words.
 
-    Example output: "\\[A\\to\\left[4,0,0,4,20,21\\right]\\]"
+    Example output: "\A\\to\\left[4,0,0,4,20,21\\right]"
     """
     words = assemble(assembly)
     inner = ",".join(str(x) for x in words)
