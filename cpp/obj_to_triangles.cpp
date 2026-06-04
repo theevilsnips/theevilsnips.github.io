@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <cstdlib>
+#include <algorithm>
 
 struct Vertex {
     double x, y, z;
@@ -15,11 +16,11 @@ struct Face {
 
 std::vector<Vertex> vertices;
 std::vector<Face> faces;
-
+std::vector<std::pair<int, int>> edges;
 bool parseOBJFile(const std::string& filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "Error: Could not open file " << filename << std::endl;
+        std::cerr << "Error: Could not open file " << filename << "\n";
         return false;
     }
 
@@ -60,31 +61,62 @@ bool parseOBJFile(const std::string& filename) {
                 faces.push_back(f);
             }
         }
+        
     }
-
+    //Process edges based on faces (no duplicate edges)
+    
+    for (const Face& f : faces) {
+        std::pair<int, int> e1 = {std::min(f.v1, f.v2), std::max(f.v1, f.v2)};
+        std::pair<int, int> e2 = {std::min(f.v2, f.v3), std::max(f.v2, f.v3)};
+        std::pair<int, int> e3 = {std::min(f.v3, f.v1), std::max(f.v3, f.v1)};
+        if (std::find(edges.begin(), edges.end(), e1) == edges.end()) {
+            edges.push_back(e1);
+        }
+        if (std::find(edges.begin(), edges.end(), e2) == edges.end()) {
+            edges.push_back(e2);
+        }
+        if (std::find(edges.begin(), edges.end(), e3) == edges.end()) {
+            edges.push_back(e3);
+        }
+    }
     file.close();
     return true;
 }
 
-void outputTriangles() {
-    std::cout << "[";
+void outputArrays() {
+    std::cout << "Points: [";
+    for (size_t i = 0; i < vertices.size(); i++) {
+        const Vertex& v = vertices[i];
+        if (i > 0) {
+            std::cout << ",";
+        }
+        std::cout << v.x << "," << v.y << "," << v.z;
+    }
+    std::cout << "]\n";
+    std::cout << "Edges: [";
+    size_t i = 0;
+    for (const auto& edge : edges) {
+        if (i > 0) std::cout << ",";
+        std::cout << edge.first << "," << edge.second;
+        i++;
+    }
+    std::cout << "]\n";
+    std::cout << "Faces: [";
     
     for (size_t i = 0; i < faces.size(); i++) {
         const Face& f = faces[i];
-        const Vertex& v1 = vertices[f.v1];
-        const Vertex& v2 = vertices[f.v2];
-        const Vertex& v3 = vertices[f.v3];
+        int v1 = f.v1;
+        int v2 = f.v2;
+        int v3 = f.v3;
 
         if (i > 0) {
             std::cout << ",";
         }
 
-        std::cout  << v1.x << "," << v1.y << "," << v1.z << ","
-                       << v2.x << "," << v2.y << "," << v2.z << ","
-                       << v3.x << "," << v3.y << "," << v3.z;
+        std::cout  << v1 << "," << v2 << "," << v3;
     }
 
-    std::cout << "]" << std::endl;
+    std::cout << "]\n";
 }
 
 int main(int argc, char* argv[]) {
@@ -104,7 +136,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    outputTriangles();
+    outputArrays();
 
     return 0;
 }
