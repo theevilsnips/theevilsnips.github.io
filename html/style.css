@@ -1,0 +1,13 @@
+body { margin: 0; }
+canvas { display: block; border: 1px solid black; }
+.small_button {
+    background: #FFFFFF;
+    color: #000000;
+    border: #000000 1px solid;
+}
+.small_button:hover {
+background: #000000;
+color: #FFFFFF;
+
+
+}
