@@ -1,7 +1,7 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 class Vector2D {
-  constructor(x, y) {
+  constructor(x=0, y=0) {
     this.x = x;
     this.y = y;
   }
@@ -9,7 +9,7 @@ class Vector2D {
     return Math.sqrt(this.x * this.x + this.y * this.y);
   }
 
-  normalize() {
+  unit_vector() {
     const len = this.length();
     if (len > 0) {
       return new Vector2D(this.x / len, this.y / len);
@@ -23,7 +23,7 @@ class Vector2D {
   multiply(scalar) {
     return new Vector2D(this.x * scalar, this.y * scalar);
   }
-  dotProduct(vector) {
+  dot_product(vector) {
     return this.x * vector.x + this.y * vector.y;
   }
   set(x, y) {
@@ -35,12 +35,12 @@ class Vector2D {
   }
 }
 class Ball {
-  constructor(x, y, radius, color, mass = 1) {
+  constructor(x, y, radius, color, vel=new Vector2D(), mass=1) {
     this.pos = new Vector2D(x, y);
     this.radius = radius;
     this.color = color;
     this.mass = mass;
-    this.vel = new Vector2D(Math.random() * 4 - 2, Math.random() * 4 - 2); // Random velocity
+    this.vel = vel
   }
 
   draw() {
@@ -51,37 +51,40 @@ class Ball {
     ctx.closePath();
   }
   draw_debug(){
-    debug_text.innerText=`Debug`;
-    ctx.strokeStyle="#000000";
-    ctx.lineWidth=10;
+    ctx.beginPath();
     ctx.moveTo(this.pos.x,this.pos.y);
     ctx.lineTo(this.pos.x+10*this.vel.x,this.pos.y+10*this.vel.y);
+    ctx.stroke();
+    ctx.closePath();
+    return;
   }
-  handleCollision(other, restitution) {
-    if (!collisionsEnabled) return; // Skip collision handling if disabled
-    const dir= new Vector2D(this.pos.x - other.pos.x, this.pos.y - other.pos.y);
-    let dir_length = dir.length();
-    if (dir_length > this.radius + other.radius) return; // No collision
-    dir.normalize();
-    const correction = (this.radius + other.radius - dir_length) / 2;
-    this.pos = this.pos.add(dir.multiply(correction));
-    other.pos = other.pos.add(dir.multiply(-correction));
-    const v1 = this.vel.dotProduct(dir);
-    const v2 = other.vel.dotProduct(dir);
-    const m1 = this.mass;
-    const m2 = other.mass;
-    const new_v1 = (m1 * v1 + m2 * v2 - m2 * (v1 - v2) * restitution) / (m1 + m2);
-	  const new_v2 = (m1 * v1 + m2 * v2 - m1 * (v2 - v1) * restitution) / (m1 + m2);
-    this.vel = this.vel.add(dir.multiply(new_v1 - v1));
-    other.vel = other.vel.add(dir.multiply(new_v2 - v2));
+  handle_collision(other, restitution) {
+    if (!collisions_enabled) return; // Skip collision handling if disabled
+    //if (this.vel.dot_product(other.pos.add(this.pos.multiply(-1)).unit_vector()) < 0) return; // Skip if moving away
+    const normal=other.pos.add(this.pos.multiply(-1));
+    
+    const normal_length = normal.length();
+    if (normal_length > this.radius + other.radius) return; // No collision
+    let v_1=this.vel;
+    let v_2=other.vel;
+    const m_1=this.mass;
+    const m_2=other.mass;
+    
+    const u_normal=normal.unit_vector();
+    const u_tangential=Vector2D(-u_normal.y,u_normal.x);
+    const v1n=u_normal.dot_product(v_1);
+    const v2n=u_normal.dot_product(v_2);
+    const v1t=u_tangential.dot_product(v_1);
+    const v2t=u_tangential.dot_product(v_2);
+    const v1np=u_normal.multiply((v1n*(m_1-m_2)+2*m_2*v2n)/(m_1+m_2));
+    const v2np=u_normal.multiply((v2n*(m_2-m_1)+2*m_1*v1n)/(m_2+m_1));
+    
+    this.vel = v1np.add(v1t);
+    other.vel = v2np.add(v2t);
   }
   update() {
-    /*for (const ball of balls) {
-      if (ball !== this) {
-        this.handleCollision(ball, restitution);
-      }
-    }*/
-    if (gravityEnabled) {
+    
+    if (gravity_enabled) {
       this.vel = this.vel.add(new Vector2D(0, gravity)); // Apply gravity to velocity
     }
     this.pos = this.pos.add(this.vel);
@@ -93,20 +96,27 @@ class Ball {
     if (this.pos.y + this.radius > canvas.height || this.pos.y - this.radius < 0) {
       this.vel = new Vector2D(this.vel.x, -this.vel.y);
     }
-    
+    for (const ball of balls) {
+      if (ball !== this) {
+        this.handle_collision(ball, restitution);
+
+      }
+    }
+    //debug_text.innerHTML = `Gravity: ${gravity_enabled ? 'On' : 'Off'}, Restitution: ${restitution.toFixed(2)}, Collisions: ${collisions_enabled ? 'On' : 'Off'}`;
   }
 }
 const gravity = 0.1; // Gravity acceleration
 let restitution = 0.8; // Coefficient of restitution for collisions
-let gravityEnabled = true; // Flag to toggle gravity
-let collisionsEnabled = true; // Flag to toggle collisions
+let gravity_enabled = true; // Flag to toggle gravity
+let collisions_enabled = true; // Flag to toggle collisions
 const balls = [];
 for (let i = 0; i < 10; i++) {
   const radius = 20;
   const x = Math.random() * (canvas.width - radius * 2) + radius;
   const y = Math.random() * (canvas.height - radius * 2) + radius;
   const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
-  balls.push(new Ball(x, y, radius, color));
+  const velocity=new Vector2D(4*(2*Math.random()-1),4*(2*Math.random()-1));
+  balls.push(new Ball(x, y, radius, color, velocity));
 }
 
 function animate() {

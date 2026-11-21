@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel='icon' href='/../favicon.png' type='image/x-icon' >
+    <link rel="shortcut icon" href="/../favicon.png" type="image/x-icon" sizes="16x16" />
+    <link rel="stylesheet" href="/../style.css">
+    <title>2d Physics</title>
+  </head>
+  <body>
+    <button id="reset" class="small_button">Reset</button>
+    <button id="pause" class="small_button">Pause</button>
+    Toggle Paint
+    <input type="checkbox" id="toggle_paint"></input><!--Toggles density painting on user click and drag-->
+    Density: 0<input type="range" id="densitySlider" min="0" max="1" step="0.01" value="0.5">1
+    <input type="number" id="radius" value=10></input>
+    <div><canvas id="canvas" width="640" height="640" id="canvas"></canvas></div>
+
+    <script type="module" src="fluid_grid.js"></script>
+  </body>
+</html>
