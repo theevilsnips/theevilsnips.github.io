@@ -49,6 +49,7 @@ class Ball {
     ctx.fillStyle = this.color;
     ctx.fill();
     ctx.closePath();
+    //console.log("Draw")
   }
   draw_debug(){
     ctx.beginPath();
@@ -59,28 +60,33 @@ class Ball {
     return;
   }
   handle_collision(other, restitution) {
+    
     if (!collisions_enabled) return; // Skip collision handling if disabled
     //if (this.vel.dot_product(other.pos.add(this.pos.multiply(-1)).unit_vector()) < 0) return; // Skip if moving away
     const normal=other.pos.add(this.pos.multiply(-1));
     
     const normal_length = normal.length();
-    if (normal_length > this.radius + other.radius) return; // No collision
+    if (normal_length > this.radius + other.radius) {return;}; // No collision
     let v_1=this.vel;
     let v_2=other.vel;
     const m_1=this.mass;
     const m_2=other.mass;
     
     const u_normal=normal.unit_vector();
-    const u_tangential=Vector2D(-u_normal.y,u_normal.x);
+    const u_tangential=new Vector2D(-u_normal.y,u_normal.x);
     const v1n=u_normal.dot_product(v_1);
     const v2n=u_normal.dot_product(v_2);
     const v1t=u_tangential.dot_product(v_1);
     const v2t=u_tangential.dot_product(v_2);
     const v1np=u_normal.multiply((v1n*(m_1-m_2)+2*m_2*v2n)/(m_1+m_2));
     const v2np=u_normal.multiply((v2n*(m_2-m_1)+2*m_1*v1n)/(m_2+m_1));
-    
+    const correction=(this.radius+other.radius-normal_length)/2;
+    this.pos=this.pos.add(normal.multiply(-correction));
+    other.pos=other.pos.add(normal.multiply(correction));
     this.vel = v1np.add(v1t);
     other.vel = v2np.add(v2t);
+    console.log("Collision")
+    
   }
   update() {
     
@@ -159,7 +165,7 @@ document.getElementById('resetButton').addEventListener('click', () => {
   }
 });
 document.getElementById('gravityToggleButton').addEventListener('click', () => {
-  gravityEnabled = !gravityEnabled; // Toggle gravity on/off
+  gravity_enabled = !gravity_enabled; // Toggle gravity on/off
 });
 document.getElementById('restitutionSlider').addEventListener('input', (event) => {
   restitution = parseFloat(event.target.value);
