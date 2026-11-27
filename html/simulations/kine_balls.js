@@ -1,3 +1,5 @@
+//2d Billiards Simulation
+
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 class Vector2D {
