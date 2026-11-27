@@ -50,6 +50,7 @@ class Ball {
     this.color = color;
     this.mass = mass;
     this.vel = vel;
+    this.is_pinned=false;
   }
 
   draw() {
@@ -70,6 +71,7 @@ class Ball {
 
   // Integrate only. Collisions are handled separately, once per pair.
   move() {
+    if (this.is_pinned) return;
     if (gravity_enabled) {
       this.vel = this.vel.add(new Vector2D(0, gravity).multiply(60*dt));
     }
@@ -176,7 +178,7 @@ let time_last=0;
 function animate(time) {
   animationId = requestAnimationFrame(animate);
   dt=(time-time_last)*0.001;
-  console.log(dt);
+  //console.log(dt);
   step();
   render();
   time_last=time;
@@ -195,6 +197,63 @@ function stop() {
 
 init();
 start();
+function find_ball_by_xy(x,y) {
+  let ball;
+  for (ball of balls) {
+    if (ball.pos.add(new Vector2D(-x,-y)).length()<ball.radius) return ball;
+  }
+  return null
+}
+class UserInteraction {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.isDragging = false;
+    this.lastX = 0;
+    this.lastY = 0;
+    this.ball;
+    this.canvas.addEventListener('mousedown', (e) => {
+      this.isDragging = true;
+      const rect = this.canvas.getBoundingClientRect();
+      this.lastX = e.clientX - rect.left;
+      this.lastY = e.clientY - rect.top;
+      this.ball=find_ball_by_xy(this.lastX,this.lastY);
+      if (this.ball !=null) {
+      this.ball.is_pinned=true;
+      } else balls.push(new Ball(this.lastX,this.lastY, 20, `hsl(${Math.random() * 360}, 100%, 50%)`));
+    });
+
+    this.canvas.addEventListener('mousemove', (e) => {
+      if (this.isDragging) {
+        const rect = this.canvas.getBoundingClientRect();
+        const currentX = e.clientX - rect.left;
+        const currentY = e.clientY - rect.top;
+
+        // Calculate the change in position
+        const dx = currentX - this.lastX;
+        const dy = currentY - this.lastY;
+       
+        
+        console.log("Drag")
+        if (this.ball==null) return;
+        
+        this.ball.pos=new Vector2D(currentX,currentY);
+        this.ball.vel=new Vector2D(dx,dy);
+      }
+    });
+
+    this.canvas.addEventListener('mouseup', () => {
+      this.isDragging = false;
+      if (this.ball==null) return;
+      this.ball.is_pinned = false;
+    });
+
+    this.canvas.addEventListener('mouseleave', () => {
+      this.isDragging = false;
+
+    });
+  }
+}
+const userInteraction = new UserInteraction(canvas);
 
 document.getElementById('startButton').addEventListener('click', start);
 document.getElementById('stopButton').addEventListener('click', stop);
