@@ -110,23 +110,23 @@ class Ball {
 
       }
     }
-    //debug_text.innerHTML = `Gravity: ${gravity_enabled ? 'On' : 'Off'}, Restitution: ${restitution.toFixed(2)}, Collisions: ${collisions_enabled ? 'On' : 'Off'}`;
   }
 }
 const gravity = 0.1; // Gravity acceleration
 let restitution = 0.8; // Coefficient of restitution for collisions
 let gravity_enabled = true; // Flag to toggle gravity
 let collisions_enabled = true; // Flag to toggle collisions
-const balls = [];
-for (let i = 0; i < 10; i++) {
-  const radius = 20;
-  const x = Math.random() * (canvas.width - radius * 2) + radius;
-  const y = Math.random() * (canvas.height - radius * 2) + radius;
-  const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
-  const velocity=new Vector2D(4*(2*Math.random()-1),4*(2*Math.random()-1));
-  balls.push(new Ball(x, y, radius, color, velocity));
+function init() {
+  const balls = [];
+  for (let i = 0; i < 10; i++) {
+    const radius = 20;
+    const x = Math.random() * (canvas.width - radius * 2) + radius;
+    const y = Math.random() * (canvas.height - radius * 2) + radius;
+    const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+    const velocity=new Vector2D(4*(2*Math.random()-1),4*(2*Math.random()-1));
+    balls.push(new Ball(x, y, radius, color, velocity));
+  }
 }
-
 function animate() {
   if (isRunning) {
   requestAnimationFrame(animate);

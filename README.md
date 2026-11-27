@@ -1,4 +1,4 @@
 # htmls
 My htmls
-
-[Tictactoe](https://theevilsnips.github.io/tictactoe.html "Play Tictactoe")
+[Index](https://theevilsnips.github.io/html/index.html "HTML Index")
+[Tictactoe](https://theevilsnips.github.io/html/tictactoe.html "Play Tictactoe")
