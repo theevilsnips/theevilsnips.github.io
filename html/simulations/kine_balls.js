@@ -41,6 +41,7 @@ let restitution = 0.8;          // Coefficient of restitution
 let gravity_enabled = true;
 let collisions_enabled = true;
 let balls = [];
+let dt=0;
 
 class Ball {
   constructor(x, y, radius, color, vel = new Vector2D(), mass = 1) {
@@ -70,9 +71,9 @@ class Ball {
   // Integrate only. Collisions are handled separately, once per pair.
   move() {
     if (gravity_enabled) {
-      this.vel = this.vel.add(new Vector2D(0, gravity));
+      this.vel = this.vel.add(new Vector2D(0, gravity).multiply(60*dt));
     }
-    this.pos = this.pos.add(this.vel);
+    this.pos = this.pos.add(this.vel.multiply(60*dt));
   }
 
   // Clamp position back inside the canvas and reflect velocity only if it
@@ -151,7 +152,7 @@ function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   for (const ball of balls) {
     ball.draw();
-    ball.draw_debug();
+    //ball.draw_debug();
   }
 }
 
@@ -171,11 +172,14 @@ function step() {
 }
 
 let animationId = null;
-
-function animate() {
+let time_last=0;
+function animate(time) {
   animationId = requestAnimationFrame(animate);
+  dt=(time-time_last)*0.001;
+  console.log(dt);
   step();
   render();
+  time_last=time;
 }
 
 function start() {
