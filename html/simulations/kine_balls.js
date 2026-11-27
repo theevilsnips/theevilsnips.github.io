@@ -126,7 +126,7 @@ function init() {
     const velocity=new Vector2D(4*(2*Math.random()-1),4*(2*Math.random()-1));
     balls.push(new Ball(x, y, radius, color, velocity));
   }
-}
+}; init();
 function animate() {
   if (isRunning) {
   requestAnimationFrame(animate);
