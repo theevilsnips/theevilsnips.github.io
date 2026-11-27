@@ -158,13 +158,7 @@ document.getElementById('stopButton').addEventListener('click', () => {
 
 document.getElementById('resetButton').addEventListener('click', () => {
   balls.length = 0; // Clear the balls array
-  for (let i = 0; i < 10; i++) {
-    const radius = 20;
-    const x = Math.random() * (canvas.width - radius * 2) + radius;
-    const y = Math.random() * (canvas.height - radius * 2) + radius;
-    const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
-    balls.push(new Ball(x, y, radius, color));
-  }
+  init();
 });
 document.getElementById('gravityToggleButton').addEventListener('click', () => {
   gravity_enabled = !gravity_enabled; // Toggle gravity on/off
