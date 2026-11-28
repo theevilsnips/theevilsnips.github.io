@@ -41,16 +41,18 @@ let restitution = 0.8;          // Coefficient of restitution
 let gravity_enabled = true;
 let collisions_enabled = true;
 let balls = [];
+let ball_ids= [];
 let dt=0;
 
 class Ball {
-  constructor(x, y, radius, color, vel = new Vector2D(), mass = 1) {
+  constructor(x, y, radius, color, id, vel = new Vector2D(), mass = 1) {
     this.pos = new Vector2D(x, y);
     this.radius = radius;
     this.color = color;
     this.mass = mass;
     this.vel = vel;
     this.is_pinned=false;
+    this.id=id;
   }
 
   draw() {
@@ -131,8 +133,10 @@ function resolve_collision(a, b) {
   a.vel = n.multiply(v1n_new).add(t.multiply(v1t));
   b.vel = n.multiply(v2n_new).add(t.multiply(v2t));
 }
+const id_gen= () => Math.floor(Math.random()*(2**32));
 
 function init() {
+  ball_ids =[];
   balls = [];
   const radius = 20;
   for (let i = 0; i < 10; i++) {
@@ -146,7 +150,9 @@ function init() {
     }
     const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
     const velocity = new Vector2D(4 * (2 * Math.random() - 1), 4 * (2 * Math.random() - 1));
-    balls.push(new Ball(x, y, radius, color, velocity));
+    const id=id_gen();
+    ball_ids.push(id);
+    balls.push(new Ball(x, y, radius, color, id, velocity));
   }
 }
 
@@ -212,14 +218,18 @@ class UserInteraction {
     this.lastY = 0;
     this.ball;
     this.canvas.addEventListener('mousedown', (e) => {
-      this.isDragging = true;
       const rect = this.canvas.getBoundingClientRect();
+      this.isDragging = true;
       this.lastX = e.clientX - rect.left;
       this.lastY = e.clientY - rect.top;
       this.ball=find_ball_by_xy(this.lastX,this.lastY);
       if (this.ball !=null) {
       this.ball.is_pinned=true;
-      } else balls.push(new Ball(this.lastX,this.lastY, 20, `hsl(${Math.random() * 360}, 100%, 50%)`));
+      } else {
+        const id=id_gen();
+        ball_ids.push(id);
+        balls.push(new Ball(this.lastX,this.lastY, 20, `hsl(${Math.random() * 360}, 100%, 50%)`, id));
+      }
     });
 
     this.canvas.addEventListener('mousemove', (e) => {
@@ -233,11 +243,13 @@ class UserInteraction {
         const dy = currentY - this.lastY;
        
         
-        console.log("Drag")
+        //console.log("Drag");
         if (this.ball==null) return;
         
         this.ball.pos=new Vector2D(currentX,currentY);
         this.ball.vel=new Vector2D(dx,dy);
+        this.lastX=currentX;
+        this.lastY=currentY;
       }
     });
 
@@ -249,7 +261,18 @@ class UserInteraction {
 
     this.canvas.addEventListener('mouseleave', () => {
       this.isDragging = false;
+      if (this.ball==null) return;
+      this.ball.is_pinned = false;
+    });
 
+    this.canvas.addEventListener("auxclick", () => {
+      const rect = this.canvas.getBoundingClientRect();
+      
+      this.ball=find_ball_by_xy(this.lastX,this.lastY);
+      if (this.ball==null) return;
+      const id=ball_ids.indexOf(this.ball.id);
+      ball_ids.splice(id,1);
+      balls.splice(id,1);
     });
   }
 }
